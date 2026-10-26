@@ -8,6 +8,8 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "matplotlib>=3.11.2",
+    "statsmodels>=0.15.0",
     "yfinance>=1.7.0",
 ]
 
