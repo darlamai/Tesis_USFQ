@@ -26,7 +26,7 @@ def unidad(c):
 def graficar_niveles_con_cortes(base, columnas=None, splits=None):
     """Niveles de cada serie con líneas verticales en los cortes train / val / test."""
     columnas = columnas or list(base.columns)
-    splits = splits or cfg.SPLITS
+    splits = splits or cfg.splits
     cortes = [pd.Timestamp(splits["train"][1]), pd.Timestamp(splits["val"][1])]
     fig, axes = plt.subplots(len(columnas), 1, figsize=(13, 2.3 * len(columnas)), sharex=True)
     for ax, c in zip(np.atleast_1d(axes), columnas):

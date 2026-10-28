@@ -26,7 +26,7 @@ def construir_retornos(precios, transf=None):
     Transformación punto a punto según config.TRANSF.
     Los precios <= 0 quedan en NaN en 'logret' (no se inventan valores).
     """
-    transf = transf or cfg.TRANSF
+    transf = transf or cfg.transf
     out = pd.DataFrame(index=precios.index)
     for c, t in transf.items():
         s = precios[c]

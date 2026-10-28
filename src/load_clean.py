@@ -33,7 +33,7 @@ def eliminar_filas_nulas(base, umbral=None):
 
 def particionar(df, splits=None):
     """Parte un DataFrame con índice de fechas en train / val / test según config.SPLITS."""
-    splits = splits or cfg.SPLITS
+    splits = splits or cfg.splits
     return {k: df.loc[a:b] for k, (a, b) in splits.items()}
 
 
