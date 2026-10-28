@@ -39,10 +39,10 @@ def particionar(df, splits=None):
 
 def verificar_particion(df, partes, ventanas=None):
     """Sin solapes, sin huecos, y las ventanas de test cubren exactamente el test."""
-    ventanas = ventanas or cfg.VENTANAS_TEST
+    ventanas = ventanas or cfg.ventanas_test
     assert partes["train"].index.max() < partes["val"].index.min()
     assert partes["val"].index.max() < partes["test"].index.min()
-    a0, b0 = cfg.SPLITS["train"][0], cfg.SPLITS["test"][1]
+    a0, b0 = cfg.splits["train"][0], cfg.splits["test"][1]
     assert sum(len(v) for v in partes.values()) == len(df.loc[a0:b0])
     assert sum(len(df.loc[a:b]) for a, b in ventanas.values()) == len(partes["test"])
     return True

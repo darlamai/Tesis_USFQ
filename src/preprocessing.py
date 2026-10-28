@@ -44,17 +44,17 @@ def preparar_y_guardar(ruta_raw=None, destino=None):
     crudo -> limpieza de filas con nulos -> retornos -> partición -> disco.
     Guarda precios_{train,val,test}.csv, retornos_{train,val,test}.csv y las filas eliminadas.
     """
-    destino = destino or cfg.PROCESADOS
+    destino = destino or cfg.procesados
     destino.mkdir(parents=True, exist_ok=True)
 
-    base, eliminadas = eliminar_filas_nulas(cargar_crudo(ruta_raw))
+    base, eliminadas = load_clean.eliminar_filas_nulas(load_clean.cargar_crudo(ruta_raw))
     ret = construir_retornos(base)
 
-    px_partes, ret_partes = particionar(base), particionar(ret)
-    verificar_particion(base, px_partes)
-    verificar_particion(ret, ret_partes)
+    px_partes, ret_partes = load_clean.particionar(base), load_clean.particionar(ret)
+    load_clean.verificar_particion(base, px_partes)
+    load_clean.verificar_particion(ret, ret_partes)
 
-    for k in cfg.SPLITS:
+    for k in cfg.splits:
         px_partes[k].to_csv(destino / f"precios_{k}.csv")
         ret_partes[k].to_csv(destino / f"retornos_{k}.csv")
     eliminadas.to_csv(destino / "filas_eliminadas_por_nulos.csv")
@@ -72,7 +72,7 @@ def cargar(tipo, split, permitir_test=False, carpeta=None):
             "El test está reservado para la evaluación final. "
             "Usa permitir_test=True solo en el notebook de evaluación."
         )
-    carpeta = carpeta or cfg.PROCESADOS
+    carpeta = carpeta or cfg.procesados
     return pd.read_csv(carpeta / f"{tipo}_{split}.csv", index_col=0, parse_dates=True)
 
 

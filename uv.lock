@@ -379,6 +379,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },
+    { name = "numpy" },
     { name = "statsmodels" },
     { name = "yfinance" },
 ]
@@ -386,6 +387,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "matplotlib", specifier = ">=3.11.2" },
+    { name = "numpy", specifier = ">=2.5.4" },
     { name = "statsmodels", specifier = ">=0.15.0" },
     { name = "yfinance", specifier = ">=1.7.0" },
 ]
