@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore")
 
 
 def unidad(c):
-    return "puntos" if cfg.TRANSF[c] == "diff" else "log-retorno"
+    return "puntos" if cfg.transf[c] == "diff" else "log-retorno"
 
 
 # =====================================================================================
@@ -311,14 +311,14 @@ def tabla_estadisticos(ret, lags=10):
 
 def outliers_z(r, k=None):
     """Observaciones con |z| > k, con media y desviación de la propia serie que se pase (train)."""
-    k = cfg.UMBRAL_OUTLIER_Z if k is None else k
+    k = cfg.umbral_outlier_z if k is None else k
     r = r.dropna()
     return r[(r - r.mean()).abs() > k * r.std()]
 
 
 def graficar_serie(r, c, k=None):
     """Serie transformada con los puntos |z| > k marcados."""
-    k = cfg.UMBRAL_OUTLIER_Z if k is None else k
+    k = cfg.umbral_outlier_z if k is None else k
     r = r.dropna(); out = outliers_z(r, k)
     fig, ax = plt.subplots(figsize=(13, 3.2))
     ax.plot(r, lw=0.5)
@@ -340,7 +340,7 @@ def graficar_panel(r, c, w1=21, w2=63):
     fig.suptitle(f"{c} ({unidad(c)}), train", fontsize=13)
 
     ax[0, 0].plot(r, lw=0.5)
-    ax[0, 0].scatter(out.index, out, color="red", s=14, zorder=3, label=f"|z|>{cfg.UMBRAL_OUTLIER_Z}: {len(out)}")
+    ax[0, 0].scatter(out.index, out, color="red", s=14, zorder=3, label=f"|z|>{cfg.umbral_outlier_z}: {len(out)}")
     ax[0, 0].axhline(mu, color="k", ls="--", lw=0.7); ax[0, 0].legend()
     ax[0, 0].set_title("Serie transformada")
 
@@ -555,3 +555,89 @@ def lift_colas(ret, target, exog, q=0.90, nperm=2000, seed=0):
     out = pd.DataFrame(filas)
     out["q_FDR"] = multipletests(out["p"], method="fdr_bh")[1]
     return out.round(4)
+
+
+
+def graficar_series_transformadas(ret, w=63):
+    """Todas las series transformadas apiladas (mismo eje de fechas), con la desviación móvil w d en la banda ±."""
+    cols = list(ret.columns)
+    fig, axes = plt.subplots(len(cols), 1, figsize=(13, 2.2 * len(cols)), sharex=True)
+    for ax, c in zip(np.atleast_1d(axes), cols):
+        r = ret[c]
+        ax.plot(r, lw=0.5)
+        ax.axhline(r.mean(), color="k", ls="--", lw=0.7)
+        sd = r.rolling(w).std()
+        ax.plot(sd, color="red", lw=0.8, label=f"±σ móvil {w} d")
+        ax.plot(-sd, color="red", lw=0.8)
+        ax.set_ylabel(f"{c}\n({unidad(c)})", fontsize=8); ax.grid(alpha=0.3)
+        ax.legend(loc="upper right", fontsize=7)
+    np.atleast_1d(axes)[0].set_title("Series transformadas, train")
+    plt.tight_layout(); plt.show()
+
+
+def pruebas_dependencia(ret, lags=(5, 10, 20), alpha=0.05):
+    """
+    Pruebas formales que acompañan a la ACF / PACF, para cada serie transformada (usar con train).
+
+      Ljung-Box(r)    H0: sin autocorrelación conjunta en r hasta el rezago m.
+      Ljung-Box(r²)   H0: sin autocorrelación conjunta en r² (dependencia en la magnitud de los movimientos).
+      ARCH-LM         H0: sin efecto ARCH (la varianza no depende de los errores² pasados).
+                      Se aplica a e = r - media (residuo de una ecuación de media constante).
+      Jarque-Bera     H0: asimetría y curtosis de una normal.
+      ADF             H0: raíz unitaria (no estacionaria).      Rechazar H0 = evidencia de estacionariedad.
+      KPSS            H0: estacionaria alrededor de una media.  Rechazar H0 = evidencia contra estacionariedad.
+
+    Devuelve una tabla larga: serie, prueba, rezagos, estadístico, p_valor, H0, rechaza_H0, lectura.
+    ADF y KPSS y JB no dependen del rezago m (rezagos = '-'): ADF elige sus rezagos por AIC y KPSS usa nlags='auto'.
+    El p-valor de KPSS está acotado por statsmodels entre 0.01 y 0.10.
+    """
+    filas = []
+
+    def agregar(c, prueba, m, est, p, h0, lectura_si_rechaza, lectura_si_no):
+        rech = bool(p < alpha)
+        filas.append({"serie": c, "prueba": prueba, "rezagos": m, "estadistico": est, "p_valor": p,
+                      "H0": h0, "rechaza_H0": rech,
+                      "lectura": lectura_si_rechaza if rech else lectura_si_no})
+
+    for c in ret.columns:
+        r = ret[c].dropna()
+        e = r - r.mean()
+        lb_r = acorr_ljungbox(r, lags=list(lags))
+        lb_r2 = acorr_ljungbox(r ** 2, lags=list(lags))
+        for m in lags:
+            agregar(c, "Ljung-Box r", m, lb_r.loc[m, "lb_stat"], lb_r.loc[m, "lb_pvalue"],
+                    "sin autocorrelación en r", "hay autocorrelación en r", "sin autocorrelación en r")
+            agregar(c, "Ljung-Box r²", m, lb_r2.loc[m, "lb_stat"], lb_r2.loc[m, "lb_pvalue"],
+                    "sin autocorrelación en r²", "la magnitud de los movimientos es predecible (volatilidad agrupada)",
+                    "sin dependencia en la magnitud")
+            lm, p_lm, _, _ = het_arch(e, nlags=m)
+            agregar(c, "ARCH-LM", m, lm, p_lm,
+                    "sin efecto ARCH", "efecto ARCH: la varianza depende del pasado", "sin efecto ARCH")
+
+        jb, p_jb = stats.jarque_bera(r)
+        agregar(c, "Jarque-Bera", "-", jb, p_jb, "distribución normal",
+                "se aparta de la normal (asimetría y/o colas)", "compatible con la normal")
+
+        adf_stat, adf_p = adfuller(r, autolag="AIC")[:2]
+        agregar(c, "ADF", "-", adf_stat, adf_p, "raíz unitaria",
+                "estacionaria (rechaza la raíz unitaria)", "no se rechaza la raíz unitaria")
+
+        kpss_stat, kpss_p = kpss(r, regression="c", nlags="auto")[:2]
+        agregar(c, "KPSS", "-", kpss_stat, kpss_p, "estacionaria",
+                "evidencia contra la estacionariedad", "no se rechaza la estacionariedad")
+
+    out = pd.DataFrame(filas)
+    out["estadistico"] = out["estadistico"].astype(float).round(4)
+    out["p_valor"] = out["p_valor"].astype(float)
+    return out
+
+
+def resumen_pruebas(tabla, rezago_ref=10):
+    """
+    p-valores en formato ancho (filas = serie, columnas = prueba) para un rezago de referencia.
+    Las pruebas sin rezago (JB, ADF, KPSS) se muestran siempre.
+    """
+    t = tabla[(tabla["rezagos"] == rezago_ref) | (tabla["rezagos"] == "-")]
+    orden = ["Ljung-Box r", "Ljung-Box r²", "ARCH-LM", "Jarque-Bera", "ADF", "KPSS"]
+    ancho = t.pivot(index="serie", columns="prueba", values="p_valor")[orden]
+    return ancho.reindex(tabla["serie"].unique())

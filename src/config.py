@@ -36,5 +36,5 @@ umbral_nulos = 0.05      # se eliminan filas con nulos si el % medio de nulos es
 umbral_outlier_z = 5     # |z| > 5, con la desviación calculada solo en train
 
 # Propuestos: confirmar con el tutor y dejar escritos ANTES de ver resultados
-#K_GRID = list(range(1, 21))          # longitud de la ventana de entrada
-#H_GRID = [1, 5, 10, 21, 63]          # horizonte de predicción / generación
+k_grid = list(range(1, 21))          # longitud de la ventana de entrada
+h_grid = [1, 5, 10, 21, 63]          # horizonte de predicción / generación
