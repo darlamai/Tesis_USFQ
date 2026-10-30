@@ -206,7 +206,7 @@ def pronostico_futuro(segmento, W, steps_back):
 
 
 # ------------------------------------------------------------------------------------------
-# Gráficos train / validación / test / previsión
+# Gráficos train / validación / test / predicción
 # ------------------------------------------------------------------------------------------
 def r2_fuera_de_muestra(rmse_modelo, rmse_referencia):
     """R²_OS = 1 - MSE_modelo / MSE_referencia. > 0: el modelo supera a la referencia; < 0: queda peor."""
@@ -215,24 +215,24 @@ def r2_fuera_de_muestra(rmse_modelo, rmse_referencia):
 
 def graficar_train_test_prediccion(y_train, y_val, y_test, pred_val, pred_test, titulo=""):
     """
-    Panel superior: retornos observados de train, validación y test, con la previsión encima.
-    Panel inferior: solo la previsión, con su propia escala (los retornos diarios son mucho mayores
-    que la previsión y esta no se vería en el panel superior).
+    Panel superior: retornos observados de train, validación y test, con la predicción encima.
+    Panel inferior: solo la predicción, con su propia escala (los retornos diarios son mucho mayores
+    que la predicción y esta no se vería en el panel superior).
     """
     fig, (a1, a2) = plt.subplots(2, 1, figsize=(15, 8), sharex=True, gridspec_kw={"height_ratios": [2, 1]})
     a1.plot(y_train, color="0.45", lw=0.5, label="Train (observado)")
     a1.plot(y_val, color="tab:orange", lw=0.5, label="Validación (observado)")
     a1.plot(y_test, color="tab:blue", lw=0.5, label="Test (observado)")
     a1.plot(pred_val, color="red", lw=1.0)
-    a1.plot(pred_test, color="red", lw=1.0, label="Previsión")
-    a1.set_ylabel("Log-retorno diario"); a1.set_title(f"Retorno del WTI: train, test y previsión {titulo}")
+    a1.plot(pred_test, color="red", lw=1.0, label="Predicción")
+    a1.set_ylabel("Log-retorno diario"); a1.set_title(f"Retorno del WTI: train, test y predicción {titulo}")
     a1.legend(loc="upper left", ncol=4); a1.grid(alpha=0.3)
 
     a2.plot(pred_val, color="red", lw=0.8)
     a2.plot(pred_test, color="red", lw=0.8)
     a2.axhline(0, color="k", lw=0.6, ls=":")
-    a2.set_ylabel("Previsión"); a2.set_xlabel("Tiempo"); a2.grid(alpha=0.3)
-    a2.set_title("Solo la previsión (escala propia)")
+    a2.set_ylabel("Predicción"); a2.set_xlabel("Tiempo"); a2.grid(alpha=0.3)
+    a2.set_title("Solo la predicción (escala propia)")
     for ax in (a1, a2):
         for corte in (y_train.index[-1], y_val.index[-1]):
             ax.axvline(corte, color="k", ls="--", lw=0.7)
@@ -244,7 +244,7 @@ def graficar_precio_prediccion(px_train, px_val, px_test, pred_val, pred_test, H
     Precio del WTI (train, validación, test) y precio previsto un día adelante:
         P_prev(t) = P_observado(t-1) · exp(retorno previsto(t)).
     Solo vale para H = 1: con H > 1 habría que encadenar previsiones y re-anclar el precio, y el gráfico
-    de retornos ya muestra la previsión sin ambigüedad. Aviso: como el precio previsto parte del precio
+    de retornos ya muestra la predicción sin ambigüedad. Aviso: como el precio previsto parte del precio
     observado de ayer, queda pegado a la curva real aunque el retorno previsto sea casi cero.
     """
     if H != 1:
@@ -257,9 +257,9 @@ def graficar_precio_prediccion(px_train, px_val, px_test, pred_val, pred_test, H
     ax.plot(px_train, color="0.45", lw=0.8, label="Train (observado)")
     ax.plot(px_val, color="tab:orange", lw=0.8, label="Validación (observado)")
     ax.plot(px_test, color="tab:blue", lw=0.8, label="Test (observado)")
-    ax.plot(p_hat, color="red", lw=0.7, alpha=0.8, label="Previsión a 1 día")
+    ax.plot(p_hat, color="red", lw=0.7, alpha=0.8, label="predicción a 1 día")
     ax.axhline(0, color="k", lw=0.5, ls=":")
     ax.set_xlabel("Tiempo"); ax.set_ylabel("Precio (USD/barril)")
-    ax.set_title("Precio del WTI: train, test y previsión a 1 día (a partir del retorno previsto)")
+    ax.set_title("Precio del WTI: train, test y predicción a 1 día (a partir del retorno previsto)")
     ax.legend(loc="upper left", ncol=4); ax.grid(alpha=0.3)
     plt.tight_layout(); plt.show()
